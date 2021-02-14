@@ -1,6 +1,6 @@
-Flask
-numpy
-statsmodels
-scikit-learn
-pandas
+Flask==1.1.2
+numpy==1.19.5
+statsmodels==0.12.0
+scikit-learn==0.23.2
+pandas==1.1.3
 gunicorn
