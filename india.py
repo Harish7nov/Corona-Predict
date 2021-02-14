@@ -319,7 +319,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-	return pred(request.args.get('state', ''), request.args.get('days', type=int))
+	return "Welcome to the Corona Virus Prediction App"
 
 @app.route("/predict", methods=['GET'])
 def home():
