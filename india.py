@@ -46,7 +46,7 @@ def pred(state, day):
 	covid.drop(["Sno"],axis=1,inplace=True)
 	# covid.isnull().sum()
 
-	covid["Date"] = pd.to_datetime(covid["Date"], format="%d/%m/%y")
+	covid["Date"] = pd.to_datetime(covid["Date"], infer_datetime_format=True)
 	
 	tn_data = covid[covid["State/UnionTerritory"]==state]
 	tn_data.set_index("Date", inplace = True) 
@@ -321,8 +321,9 @@ app = Flask(__name__)
 def index():
 	return pred(request.args.get('state', ''), request.args.get('days', type=int))
 
-@app.route("/predict")
+@app.route("/predict", methods=['GET'])
 def home():
 	return pred(request.args.get('state', ''), request.args.get('days', type=int))
 
-app.run()
+if __name__ == "__main__":
+    app.run(debug=True)
