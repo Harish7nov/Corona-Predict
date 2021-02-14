@@ -2,7 +2,6 @@
 
 import numpy as np
 import pandas as pd
-# import matplotlib.pyplot as plt
 import datetime as dt
 from datetime import datetime
 from datetime import timedelta
@@ -14,7 +13,6 @@ from sklearn.metrics import mean_squared_error
 import itertools
 from statsmodels.tsa.arima_model import ARIMA
 from statsmodels.tsa.api import Holt
-# from flask_ngrok import run_with_ngrok
 from flask import Flask
 from flask import request
 import json
@@ -307,27 +305,23 @@ def pred(state, day):
 
 
 def myconverter(obj):
-        if isinstance(obj, np.integer):
-            return int(obj)
-        elif isinstance(obj, np.floating):
-            return float(obj)
-        elif isinstance(obj, np.ndarray):
-            return obj.tolist()
-        elif isinstance(obj, datetime.datetime):
-            return obj.__str__()
+	if isinstance(obj, np.integer):
+		return int(obj)
+	elif isinstance(obj, np.floating):
+		return float(obj)
+	elif isinstance(obj, np.ndarray):
+		return obj.tolist()
+	elif isinstance(obj, datetime.datetime):
+		return obj.__str__()
 
-# out = pred("Maharashtra", 35)
-# print(out)
 
 if __name__ == "__main__":
-
 	app = Flask(__name__)
-
-# 	run_with_ngrok(app)   #starts ngrok when the app is run
 
 	@app.route("/")
 	def index():
-		return "et voila"
+		return pred(request.args.get('state', ''), request.args.get('days', type=int))
+# 		return "et voila"
 
 	@app.route("/predict")
 	def home():
