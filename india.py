@@ -38,7 +38,7 @@ def split(ts):
 
 def pred(state, day):
 
-	covid = pd.read_csv("./content/covid_19_india.csv",parse_dates=[0], dayfirst=True)
+	covid = pd.read_csv("covid_19_india.csv",parse_dates=[0], dayfirst=True)
 
 	#Dropping the column
 	covid.drop(["Time"],axis=1,inplace=True)
