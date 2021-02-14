@@ -315,16 +315,16 @@ def myconverter(obj):
 		return obj.__str__()
 
 
-if __name__ == "__main__":
-	app = Flask(__name__)
+# if __name__ == "__main__":
+app = Flask(__name__)
 
-	@app.route("/")
-	def index():
-		return pred(request.args.get('state', ''), request.args.get('days', type=int))
+@app.route("/")
+def index():
+	return pred(request.args.get('state', ''), request.args.get('days', type=int))
 # 		return "et voila"
 
-	@app.route("/predict")
-	def home():
-		return pred(request.args.get('state', ''), request.args.get('days', type=int))
-		
-	app.run()
+@app.route("/predict")
+def home():
+	return pred(request.args.get('state', ''), request.args.get('days', type=int))
+
+app.run()
