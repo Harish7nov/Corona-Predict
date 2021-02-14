@@ -326,4 +326,4 @@ def home():
 	return pred(request.args.get('state', ''), request.args.get('days', type=int))
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
