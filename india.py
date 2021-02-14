@@ -1,11 +1,8 @@
-# -*- coding: utf-8 -*-
-
 import numpy as np
 import pandas as pd
 import datetime as dt
 from datetime import datetime
 from datetime import timedelta
-import warnings
 import os
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
@@ -16,7 +13,6 @@ from statsmodels.tsa.api import Holt
 from flask import Flask
 from flask import request
 import json
-warnings.filterwarnings("ignore")
 
 
 #Mean absolute percentage error
@@ -29,12 +25,6 @@ def split(ts):
 		train = ts.iloc[:int(ts.shape[0]*0.966)]
 		test = ts.iloc[int(ts.shape[0]*0.966):]
 		return(train,test)
-
-
-# current_directory = os.getcwd()
-# final_directory = os.path.join(current_directory, r'content')
-# if not os.path.exists(final_directory):
-# 	 os.makedirs(final_directory)
 
 def pred(state, day):
 
@@ -86,9 +76,7 @@ def pred(state, day):
 	prediction_valid_linreg= lin_reg.predict(np.array(valid_ml["Days Since"]).reshape(-1,1))
 
 	model_scores.append(np.sqrt(mean_squared_error(valid_ml["Confirmed"],prediction_valid_linreg)))
-	# print("RMS for LR",np.sqrt(mean_squared_error(valid_ml["Confirmed"],prediction_valid_linreg)))
 
-	# plt.figure(figsize=(11,8))
 	prediction_linreg = lin_reg.predict(np.array(datewise_tn["Days Since"]).reshape(-1,1))
 
 	poly = PolynomialFeatures(degree = 8)
@@ -103,10 +91,8 @@ def pred(state, day):
 	prediction_poly = linreg.predict(valid_poly)
 	rmse_poly = np.sqrt(mean_squared_error(valid_ml["Confirmed"],prediction_poly))
 	model_scores.append(rmse_poly)
-	# print("RMS For PR",rmse_poly)
 
 	comp_data = poly.fit_transform(np.array(datewise_tn["Days Since"]).reshape(-1,1))
-	# plt.figure(figsize=(11,6))
 	predictions_poly = linreg.predict(comp_data)
 
 	new_date=[]
@@ -182,7 +168,7 @@ def pred(state, day):
 			holt_new_predictions.append(int(holt.forecast((len(valid)+i))[-1]))
 			arima_new_date.append(datewise_tn.index[-1]+timedelta(days=i))
 			arima_new_predictions.append(int(result.forecast((len(valid)+i))[0][-1]))
-			model_predictions = pd.DataFrame(list(zip	(new_date,new_prediction_lr,new_prediction_poly,holt_new_predictions,arima_new_predictions)),columns = ["Dates","LRP","PRP","HOLT","ARIMA"])
+			model_predictions = pd.DataFrame(list(zip(new_date,new_prediction_lr,new_prediction_poly,holt_new_predictions,arima_new_predictions)), columns = ["Dates","LRP","PRP","HOLT","ARIMA"])
 			
 	# For predicting the death case
 
@@ -232,8 +218,6 @@ def pred(state, day):
 
 	model_train_death = datewise_tn.iloc[:int(datewise_tn.shape[0]*0.95)]
 	valid = datewise_tn.iloc[int(datewise_tn.shape[0]*0.95):]
-
-	# model_train_death.head(4)
 
 	holt = Holt(np.asarray(model_train_death["Deaths"])).fit(smoothing_level = 0.3, smoothing_slope = 0.5, optimized=False)
 	y_pred_death = valid.copy()
@@ -289,7 +273,6 @@ def pred(state, day):
 			arima_new_date.append(datewise_tn.index[-1]+timedelta(days=i))
 			arima_new_predictions_death.append(int(result.forecast((len(valid)+i))[0][-1]))
 
-	# model_predictions_death = pd.DataFrame(list(zip(new_date,new_prediction_lr,new_prediction_poly,holt_new_predictions,arima_new_predictions,new_prediction_lr_death,new_prediction_poly_death,holt_new_predictions_death,arima_new_predictions_death,plot1_x,plot1_y)), columns = ["Dates","LRP_CONFIRM","PRP_CONFIRM","HOLT_CONFIRM","ARIMA_CONFIRM","LRP_DEATH","PRP_DEATH","HOLT_DEATH","ARIMA_DEATH","plot1_x","plot1_y"])
 	labels = ["Dates","LRP_CONFIRM","PRP_CONFIRM","HOLT_CONFIRM","ARIMA_CONFIRM","LRP_DEATH","PRP_DEATH","HOLT_DEATH","ARIMA_DEATH","plot1_x","plot1_y"]
 	d = {}
 
@@ -319,7 +302,6 @@ def index():
 
 @app.route("/predict")
 def home():
-# 	return f"Works Fine : {request.args.get('state', ''), request.args.get('days', type=int)}"
 	return pred(request.args.get('state', ''), request.args.get('days', type=int))
 
 if __name__ == "__main__":
