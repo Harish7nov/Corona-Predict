@@ -14,7 +14,7 @@ from sklearn.metrics import mean_squared_error
 import itertools
 from statsmodels.tsa.arima_model import ARIMA
 from statsmodels.tsa.api import Holt
-from flask_ngrok import run_with_ngrok
+# from flask_ngrok import run_with_ngrok
 from flask import Flask
 from flask import request
 import json
@@ -323,7 +323,7 @@ if __name__ == "__main__":
 
 	app = Flask(__name__)
 
-	run_with_ngrok(app)   #starts ngrok when the app is run
+# 	run_with_ngrok(app)   #starts ngrok when the app is run
 
 	@app.route("/")
 	def index():
