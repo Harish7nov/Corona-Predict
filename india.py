@@ -31,11 +31,10 @@ def split(ts):
 		return(train,test)
 
 
-current_directory = os.getcwd()
-final_directory = os.path.join(current_directory, r'content')
-if not os.path.exists(final_directory):
-	 os.makedirs(final_directory)
-
+# current_directory = os.getcwd()
+# final_directory = os.path.join(current_directory, r'content')
+# if not os.path.exists(final_directory):
+# 	 os.makedirs(final_directory)
 
 def pred(state, day):
 
@@ -44,7 +43,6 @@ def pred(state, day):
 	#Dropping the column
 	covid.drop(["Time"],axis=1,inplace=True)
 	covid.drop(["Sno"],axis=1,inplace=True)
-	# covid.isnull().sum()
 
 	covid["Date"] = pd.to_datetime(covid["Date"], infer_datetime_format=True)
 	
@@ -264,8 +262,6 @@ def pred(state, day):
 	y_pred_death["ARIMA"]=result.forecast(steps=len(test))[0]
 
 	model_scores_death.append(np.sqrt(mean_squared_error(y_pred_death["Deaths"],y_pred_death["ARIMA"])))
-	
-	
 
 	arima_new_date= []
 	arima_new_predictions_death =[]
@@ -321,7 +317,7 @@ app = Flask(__name__)
 def index():
 	return "Welcome to the Corona Virus Prediction App"
 
-@app.route("/predict", methods=['GET'])
+@app.route("/predict")
 def home():
 	return pred(request.args.get('state', ''), request.args.get('days', type=int))
 
