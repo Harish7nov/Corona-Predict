@@ -28,7 +28,7 @@ def split(ts):
 
 def pred(state, day):
 
-	covid = pd.read_csv("covid_19_india.csv",parse_dates=[0], dayfirst=True)
+	covid = pd.read_csv("./content/covid_19_india.csv",parse_dates=[0], dayfirst=True)
 
 	#Dropping the column
 	covid.drop(["Time"],axis=1,inplace=True)
@@ -36,21 +36,21 @@ def pred(state, day):
 
 	covid["Date"] = pd.to_datetime(covid["Date"], infer_datetime_format=True)
 	
-	tn_data = covid[covid["State/UnionTerritory"]==state]
-	tn_data.set_index("Date", inplace = True) 
-	datewise_tn= tn_data.drop(["ConfirmedIndianNational","ConfirmedForeignNational"],axis=1)
+	data = covid[covid["State/UnionTerritory"]==state]
+	data.set_index("Date", inplace = True) 
+	data= data.drop(["ConfirmedIndianNational","ConfirmedForeignNational"],axis=1)
 	
-	datewise_tn["WeekofYear"] = datewise_tn.index.weekofyear
+	data["WeekofYear"] = data.index.weekofyear
 	week_num=[]
 	weekwise_confirmed=[]
 	weekwise_recovered=[]
 	weekwise_deaths = []
 	w=1
 	count = 0
-	for i in list(datewise_tn["WeekofYear"].unique()):
-			weekwise_confirmed.append(datewise_tn[datewise_tn["WeekofYear"]==i]["Confirmed"].iloc[-1])
-			weekwise_recovered.append(datewise_tn[datewise_tn["WeekofYear"]==i]["Cured"].iloc[-1])
-			weekwise_deaths.append(datewise_tn[datewise_tn["WeekofYear"]==i]["Deaths"].iloc[-1])
+	for i in list(data["WeekofYear"].unique()):
+			weekwise_confirmed.append(data[data["WeekofYear"]==i]["Confirmed"].iloc[-1])
+			weekwise_recovered.append(data[data["WeekofYear"]==i]["Cured"].iloc[-1])
+			weekwise_deaths.append(data[data["WeekofYear"]==i]["Deaths"].iloc[-1])
 			week_num.append(w)
 			w=w+1
 			count += 1
@@ -59,13 +59,13 @@ def pred(state, day):
 	plot1_y = weekwise_confirmed
 	
 
-	max_tn = datewise_tn["Confirmed"].max()
+	max_tn = data["Confirmed"].max()
 
-	datewise_tn["Days Since"] = datewise_tn.index-datewise_tn.index[0]
-	datewise_tn["Days Since"]=datewise_tn["Days Since"].dt.days
+	data["Days Since"] = data.index-data.index[0]
+	data["Days Since"]=data["Days Since"].dt.days
 
-	train_ml = datewise_tn.iloc[:int(datewise_tn.shape[0]*0.95)]
-	valid_ml = datewise_tn.iloc[int(datewise_tn.shape[0]*0.95):]
+	train_ml = data.iloc[:int(data.shape[0]*0.95)]
+	valid_ml = data.iloc[int(data.shape[0]*0.95):]
 	model_scores = []
 
 	lin_reg = LinearRegression(normalize=True)
@@ -77,7 +77,7 @@ def pred(state, day):
 
 	model_scores.append(np.sqrt(mean_squared_error(valid_ml["Confirmed"],prediction_valid_linreg)))
 
-	prediction_linreg = lin_reg.predict(np.array(datewise_tn["Days Since"]).reshape(-1,1))
+	prediction_linreg = lin_reg.predict(np.array(data["Days Since"]).reshape(-1,1))
 
 	poly = PolynomialFeatures(degree = 8)
 
@@ -92,7 +92,8 @@ def pred(state, day):
 	rmse_poly = np.sqrt(mean_squared_error(valid_ml["Confirmed"],prediction_poly))
 	model_scores.append(rmse_poly)
 
-	comp_data = poly.fit_transform(np.array(datewise_tn["Days Since"]).reshape(-1,1))
+	comp_data = poly.fit_transform(np.array(data["Days Since"]).reshape(-1,1))
+	# plt.figure(figsize=(11,6))
 	predictions_poly = linreg.predict(comp_data)
 
 	new_date=[]
@@ -101,17 +102,17 @@ def pred(state, day):
 
 	# Changed..
 	for i in range(1,day):
-			new_date.append(datewise_tn.index[-1]+timedelta(days=(i-1)))
-			new_prediction_lr.append(lin_reg.predict(np.array(datewise_tn["Days Since"].max()+i).reshape(-1,1))[0][0])
-			new_date_poly=poly.fit_transform(np.array(datewise_tn["Days Since"].max()+i).reshape(-1,1))
+			new_date.append(data.index[-1]+timedelta(days=(i-1)))
+			new_prediction_lr.append(lin_reg.predict(np.array(data["Days Since"].max()+i).reshape(-1,1))[0][0])
+			new_date_poly=poly.fit_transform(np.array(data["Days Since"].max()+i).reshape(-1,1))
 			new_prediction_poly.append(linreg.predict(new_date_poly)[0])
 
 	pd.set_option('display.float_format', lambda x:'%f' %x)
 	model_predictions = pd.DataFrame(list(zip(new_date,new_prediction_lr,new_prediction_poly)),columns = ["Dates","LRP","PRP"])
 	model_predictions.head(5)
 
-	model_train = datewise_tn.iloc[:int(datewise_tn.shape[0]*0.95)]
-	valid = datewise_tn.iloc[int(datewise_tn.shape[0]*0.95):]
+	model_train = data.iloc[:int(data.shape[0]*0.95)]
+	valid = data.iloc[int(data.shape[0]*0.95):]
 
 	model_train.head(4)
 
@@ -126,12 +127,12 @@ def pred(state, day):
 
 	# Changed...
 	for i in range(1,day):
-			holt_new_date.append(datewise_tn.index[-1]+timedelta(days=(i-1)))
+			holt_new_date.append(data.index[-1]+timedelta(days=(i-1)))
 			holt_new_predictions.append(holt.forecast((len(valid)+i))[-1])
 	model_predictions["Holts Model"]= holt_new_predictions
 	model_predictions.head()
 
-	train,test=split(datewise_tn)
+	train,test=split(data)
 	y_pred = test.copy()
 	
 	#Modeling
@@ -147,7 +148,7 @@ def pred(state, day):
 
 	# Changed...
 	for i in range(1,day):
-			arima_new_date.append(datewise_tn.index[-1]+timedelta(days=i))
+			arima_new_date.append(data.index[-1]+timedelta(days=i))
 			arima_new_predictions.append(result.forecast((len(valid)+i))[0][-1])
 	model_predictions["Arima Model"]=arima_new_predictions
 
@@ -160,15 +161,15 @@ def pred(state, day):
 	arima_new_predictions =[]
 
 	for i in range(1,day):
-			new_date.append(str(datewise_tn.index[-1]+timedelta(days=i)).replace("00:00:00",'').strip())
-			new_prediction_lr.append(int(lin_reg.predict(np.array(datewise_tn["Days Since"].max()+i).reshape(-1,1))[0][0]))
-			new_date_poly=poly.fit_transform(np.array(datewise_tn["Days Since"].max()+i).reshape(-1,1))
+			new_date.append(str(data.index[-1]+timedelta(days=i)).replace("00:00:00",'').strip())
+			new_prediction_lr.append(int(lin_reg.predict(np.array(data["Days Since"].max()+i).reshape(-1,1))[0][0]))
+			new_date_poly=poly.fit_transform(np.array(data["Days Since"].max()+i).reshape(-1,1))
 			new_prediction_poly.append(int(linreg.predict(new_date_poly)[0]))
-			holt_new_date.append(datewise_tn.index[-1]+timedelta(days=i))
+			holt_new_date.append(data.index[-1]+timedelta(days=i))
 			holt_new_predictions.append(int(holt.forecast((len(valid)+i))[-1]))
-			arima_new_date.append(datewise_tn.index[-1]+timedelta(days=i))
+			arima_new_date.append(data.index[-1]+timedelta(days=i))
 			arima_new_predictions.append(int(result.forecast((len(valid)+i))[0][-1]))
-			model_predictions = pd.DataFrame(list(zip(new_date,new_prediction_lr,new_prediction_poly,holt_new_predictions,arima_new_predictions)), columns = ["Dates","LRP","PRP","HOLT","ARIMA"])
+			model_predictions = pd.DataFrame(list(zip	(new_date,new_prediction_lr,new_prediction_poly,holt_new_predictions,arima_new_predictions)),columns = ["Dates","LRP","PRP","HOLT","ARIMA"])
 			
 	# For predicting the death case
 
@@ -183,7 +184,7 @@ def pred(state, day):
 
 	model_scores_death.append(np.sqrt(mean_squared_error(valid_ml["Deaths"],prediction_valid_linreg_death)))
 
-	prediction_linreg_death = lin_reg.predict(np.array(datewise_tn["Days Since"]).reshape(-1,1))
+	prediction_linreg_death = lin_reg.predict(np.array(data["Days Since"]).reshape(-1,1))
 
 	poly = PolynomialFeatures(degree = 8)
 
@@ -198,8 +199,7 @@ def pred(state, day):
 	rmse_poly_death = np.sqrt(mean_squared_error(valid_ml["Deaths"],prediction_poly_death))
 	model_scores_death.append(rmse_poly_death)
 
-	comp_data_death = poly.fit_transform(np.array(datewise_tn["Days Since"]).reshape(-1,1))
-	# plt.figure(figsize=(11,6))
+	comp_data_death = poly.fit_transform(np.array(data["Days Since"]).reshape(-1,1))
 	predictions_poly_death = linreg.predict(comp_data_death)
 	new_date=[]
 	new_prediction_lr_death=[]
@@ -207,17 +207,16 @@ def pred(state, day):
 
 	# Changed...
 	for i in range(1,day):
-			new_date.append(datewise_tn.index[-1]+timedelta(days=(i-1)))
-			new_prediction_lr_death.append(lin_reg.predict(np.array(datewise_tn["Days Since"].max()+i).reshape(-1,1))[0][0])
-			new_date_poly_death=poly.fit_transform(np.array(datewise_tn["Days Since"].max()+i).reshape(-1,1))
+			new_date.append(data.index[-1]+timedelta(days=(i-1)))
+			new_prediction_lr_death.append(lin_reg.predict(np.array(data["Days Since"].max()+i).reshape(-1,1))[0][0])
+			new_date_poly_death=poly.fit_transform(np.array(data["Days Since"].max()+i).reshape(-1,1))
 			new_prediction_poly_death.append(linreg.predict(new_date_poly_death)[0])
 
 	pd.set_option('display.float_format', lambda x:'%f' %x)
 	model_predictions_death = pd.DataFrame(list(zip(new_date,new_prediction_lr_death,new_prediction_poly_death)),columns = 	["Dates","LRP_DEATHS","PRP_DEATHS"])
-	# model_predictions_death.head(5)
-
-	model_train_death = datewise_tn.iloc[:int(datewise_tn.shape[0]*0.95)]
-	valid = datewise_tn.iloc[int(datewise_tn.shape[0]*0.95):]
+	
+	model_train_death = data.iloc[:int(data.shape[0]*0.95)]
+	valid = data.iloc[int(data.shape[0]*0.95):]
 
 	holt = Holt(np.asarray(model_train_death["Deaths"])).fit(smoothing_level = 0.3, smoothing_slope = 0.5, optimized=False)
 	y_pred_death = valid.copy()
@@ -230,13 +229,13 @@ def pred(state, day):
 
 	# changed...
 	for i in range(1,day):
-			holt_new_date.append(datewise_tn.index[-1]+timedelta(days=(i-1)))
+			holt_new_date.append(data.index[-1]+timedelta(days=(i-1)))
 			holt_new_predictions_death.append(holt.forecast((len(valid)+i))[-1])
 
 	model_predictions_death["Holts Model"]= holt_new_predictions_death
 	model_predictions_death.head()
 
-	train,test=split(datewise_tn)
+	train,test=split(data)
 	y_pred_death = test.copy()
 	
 	#Modeling
@@ -246,13 +245,15 @@ def pred(state, day):
 	y_pred_death["ARIMA"]=result.forecast(steps=len(test))[0]
 
 	model_scores_death.append(np.sqrt(mean_squared_error(y_pred_death["Deaths"],y_pred_death["ARIMA"])))
+	
+	
 
 	arima_new_date= []
 	arima_new_predictions_death =[]
 
 	# Changed...
 	for i in range(1,day):
-			arima_new_date.append(datewise_tn.index[-1]+timedelta(days=i))
+			arima_new_date.append(data.index[-1]+timedelta(days=i))
 			arima_new_predictions_death.append(result.forecast((len(valid)+i))[0][-1])
 	model_predictions_death["Arima Model"]=arima_new_predictions_death
 
@@ -264,13 +265,13 @@ def pred(state, day):
 	arima_new_date= []
 	arima_new_predictions_death =[]
 	for i in range(1,day):
-			new_date.append(str(datewise_tn.index[-1]+timedelta(days=i)).replace("00:00:00",'').strip())
-			new_prediction_lr_death.append(int(lin_reg.predict(np.array(datewise_tn["Days Since"].max()+i).reshape(-1,1))[0]	[0]))
-			new_date_poly_death=poly.fit_transform(np.array(datewise_tn["Days Since"].max()+i).reshape(-1,1))
+			new_date.append(str(data.index[-1]+timedelta(days=i)).replace("00:00:00",'').strip())
+			new_prediction_lr_death.append(int(lin_reg.predict(np.array(data["Days Since"].max()+i).reshape(-1,1))[0]	[0]))
+			new_date_poly_death=poly.fit_transform(np.array(data["Days Since"].max()+i).reshape(-1,1))
 			new_prediction_poly_death.append(int(linreg.predict(new_date_poly)[0]))
-			holt_new_date.append(datewise_tn.index[-1]+timedelta(days=i))
+			holt_new_date.append(data.index[-1]+timedelta(days=i))
 			holt_new_predictions_death.append(int(holt.forecast((len(valid)+i))[-1]))
-			arima_new_date.append(datewise_tn.index[-1]+timedelta(days=i))
+			arima_new_date.append(data.index[-1]+timedelta(days=i))
 			arima_new_predictions_death.append(int(result.forecast((len(valid)+i))[0][-1]))
 
 	labels = ["Dates","LRP_CONFIRM","PRP_CONFIRM","HOLT_CONFIRM","ARIMA_CONFIRM","LRP_DEATH","PRP_DEATH","HOLT_DEATH","ARIMA_DEATH","plot1_x","plot1_y"]
